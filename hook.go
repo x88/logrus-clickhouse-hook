@@ -37,9 +37,9 @@ type ClickHouse struct {
 }
 
 type Hook struct {
-	ClickHouse *ClickHouse
-	connection *clickhouse.Conn
-	levels     []logrus.Level
+	ClickHouse    *ClickHouse
+	connection    *clickhouse.Conn
+	levels        []logrus.Level
 }
 
 type AsyncHook struct {
@@ -53,6 +53,7 @@ type AsyncHook struct {
 
 func (hook *Hook) Save(field map[string]interface{}) error {
 	rows := buildRows(hook.ClickHouse.Columns, []map[string]interface{}{field})
+
 	err := persist(hook.ClickHouse, hook.connection, rows)
 
 	return err
@@ -90,9 +91,8 @@ func buildRows(columns []string, fields []map[string]interface{}) (rows clickhou
 		row := clickhouse.Row{}
 
 		for _, column := range columns {
-			if field[column] == nil {
-				log.Error("Invalid log item")
-				break
+			if _, ok := field[column]; !ok {
+				field[column] = ""
 			}
 
 			row = append(row, field[column])
@@ -127,6 +127,7 @@ func NewHook(clickHouse *ClickHouse) (*Hook, error) {
 	if err != nil {
 		return nil, err
 	}
+
 
 	hook := &Hook{
 		ClickHouse: clickHouse,
@@ -164,17 +165,30 @@ func NewAsyncHook(clickHouse *ClickHouse) (*AsyncHook, error) {
 }
 
 func (hook *Hook) Fire(entry *logrus.Entry) error {
+	// Fill up template entry
+	entry.Data = entry.Data
+
+	if _, ok := entry.Data["msg"]; !ok {
+		entry.Data["msg"] = entry.Message
+	}
+
+	entry.Data["time"] = entry.Time.Format("2006-01-02 15:04:05")
+	entry.Data["level"] = entry.Level.String()
+
 	return hook.Save(entry.Data)
 }
 
 func (hook *AsyncHook) Fire(entry *logrus.Entry) error {
-	fields := make(map[string]interface{})
+	entry.Data = entry.Data
 
-	for k, v := range entry.Data {
-		fields[k] = v
+	if _, ok := entry.Data["msg"]; !ok {
+		entry.Data["msg"] = entry.Message
 	}
 
-	hook.bus <- fields
+	entry.Data["time"] = entry.Time.Format("2006-01-02 15:04:05")
+	entry.Data["level"] = entry.Level.String()
+
+	hook.bus <- entry.Data
 
 	return nil
 }
