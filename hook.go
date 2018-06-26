@@ -112,7 +112,7 @@ func getStorage(config *ClickHouse) (*clickhouse.Conn, error) {
 	params := url.Values{}
 	params.Add("user", config.Credentials.User)
 	params.Add("password", config.Credentials.Password)
-	conn.SetParams(params)
+	//conn.SetParams(params)
 
 	if err := conn.Ping(); err != nil {
 		return nil, err
