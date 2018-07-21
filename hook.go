@@ -1,12 +1,12 @@
 package hook
 
 import (
+	"github.com/dimkus/go-clickhouse"
 	"github.com/sirupsen/logrus"
-	"github.com/mintance/go-clickhouse"
-	"time"
-	"sync"
-	"os"
 	"net/url"
+	"os"
+	"sync"
+	"time"
 )
 
 var log = logrus.New()
@@ -25,11 +25,11 @@ var BufferSize = 32768
 var TickerPeriod = 10 * time.Second
 
 type ClickHouse struct {
-	Db      string
-	Table   string
-	Host    string
-	Port    string
-	Columns []string
+	Db          string
+	Table       string
+	Host        string
+	Port        string
+	Columns     []string
 	Credentials struct {
 		User     string
 		Password string
@@ -37,9 +37,9 @@ type ClickHouse struct {
 }
 
 type Hook struct {
-	ClickHouse    *ClickHouse
-	connection    *clickhouse.Conn
-	levels        []logrus.Level
+	ClickHouse *ClickHouse
+	connection *clickhouse.Conn
+	levels     []logrus.Level
 }
 
 type AsyncHook struct {
@@ -127,7 +127,6 @@ func NewHook(clickHouse *ClickHouse) (*Hook, error) {
 	if err != nil {
 		return nil, err
 	}
-
 
 	hook := &Hook{
 		ClickHouse: clickHouse,
